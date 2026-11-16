@@ -27,13 +27,23 @@
             height: 100%;
             object-fit: cover;
             z-index: 0;
-            filter: brightness(0.5);
+            opacity: 1;
+            transition: opacity 1.2s ease;
+        }
+        #bgVideo.fade-out {
+            opacity: 0;
+            pointer-events: none;
         }
         canvas {
             display: block;
             position: relative;
             z-index: 1;
             background: transparent;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+        canvas.visible {
+            opacity: 1;
         }
         #musicBtn {
             position: fixed;
@@ -59,12 +69,12 @@
 </head>
 <body>
 
-    <!-- VIDEO DE FONDO EN MUTE: cambia "videoamor.mov" si usas otro nombre o .mp4 -->
-    <video id="bgVideo" autoplay loop muted playsinline>
+    <!-- VIDEO INTRO EN MUTE (sin loop para que pase primero y al terminar salga el corazón) -->
+    <video id="bgVideo" autoplay muted playsinline>
         <source src="videoamor.mov" type="video/quicktime">
     </video>
 
-    <!-- CANCIÓN DE FONDO: cambia "cancion.mp3" por el archivo de audio que descargues -->
+    <!-- CANCIÓN DE FONDO -->
     <audio id="bgMusic" loop preload="auto">
         <source src="cancionamor.mp3" type="audio/mpeg">
     </audio>
@@ -84,6 +94,7 @@
         bgVideo.volume = 0;
 
         let isPlaying = false;
+        let heartStarted = false;
 
         function updateMusicButton() {
             musicBtn.textContent = isPlaying ? '❚❚ Pausar música' : '♪ Toca para escuchar';
@@ -111,7 +122,7 @@
             }
         });
 
-        // Iniciar la música al primer toque en cualquier parte de la pantalla (ideal para móvil/NFC)
+        // Iniciar la música al primer toque en cualquier parte de la pantalla
         document.addEventListener('pointerdown', startMusic, { once: true });
 
         function resize() {
@@ -132,7 +143,6 @@
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
-            // Escala adaptable al tamaño de la pantalla
             const minDim = Math.min(canvas.width, canvas.height);
             const scale = Math.max(7, minDim / 48);
             const fontSize = Math.max(11, Math.round(scale * 1.1));
@@ -142,7 +152,7 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // Avanzar el desplazamiento a lo largo del contorno del corazón
+            // Movimiento continuo e infinito a lo largo del corazón
             offset -= 0.008;
 
             ctx.save();
@@ -164,8 +174,25 @@
             requestAnimationFrame(animate);
         }
 
-        window.onload = () => {
+        function showHeart() {
+            if (heartStarted) return;
+            heartStarted = true;
+            bgVideo.classList.add('fade-out');
+            canvas.classList.add('visible');
             animate();
+        }
+
+        // Cuando termine el video, aparece el corazón y queda en bucle infinito
+        bgVideo.addEventListener('ended', showHeart);
+
+        // Respaldo: si el dispositivo no soporta el video, muestra el corazón directamente
+        const videoSource = bgVideo.querySelector('source');
+        if (videoSource) {
+            videoSource.addEventListener('error', showHeart);
+        }
+        bgVideo.addEventListener('error', showHeart);
+
+        window.onload = () => {
             startMusic();
         };
     </script>
