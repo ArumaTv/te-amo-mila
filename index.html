@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Te amo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        #bgVideo {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            filter: brightness(0.5);
+        }
+        canvas {
+            display: block;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+        #musicBtn {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            padding: 10px 20px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 51, 153, 0.6);
+            background: rgba(0, 0, 0, 0.55);
+            color: #ff66b2;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s, transform 0.2s;
+        }
+        #musicBtn:active {
+            transform: translateX(-50%) scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VIDEO DE FONDO EN MUTE: cambia "videoamor.mov" si usas otro nombre o .mp4 -->
+    <video id="bgVideo" autoplay loop muted playsinline>
+        <source src="videoamor.mov" type="video/quicktime">
+    </video>
+
+    <!-- CANCIÓN DE FONDO: cambia "cancion.mp3" por el archivo de audio que descargues -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="cancionamor.mp3" type="audio/mpeg">
+    </audio>
+
+    <canvas id="heartCanvas"></canvas>
+    <button id="musicBtn" type="button">♪ Toca para escuchar</button>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgVideo = document.getElementById('bgVideo');
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // Asegurar que el video siempre permanezca en silencio
+        bgVideo.muted = true;
+        bgVideo.volume = 0;
+
+        let isPlaying = false;
+
+        function updateMusicButton() {
+            musicBtn.textContent = isPlaying ? '❚❚ Pausar música' : '♪ Toca para escuchar';
+        }
+
+        function startMusic() {
+            if (!isPlaying) {
+                bgMusic.play().then(() => {
+                    isPlaying = true;
+                    updateMusicButton();
+                }).catch(() => {
+                    // El navegador espera un toque del usuario para reproducir audio
+                });
+            }
+        }
+
+        musicBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isPlaying) {
+                bgMusic.pause();
+                isPlaying = false;
+                updateMusicButton();
+            } else {
+                startMusic();
+            }
+        });
+
+        // Iniciar la música al primer toque en cualquier parte de la pantalla (ideal para móvil/NFC)
+        document.addEventListener('pointerdown', startMusic, { once: true });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const text = "Te amo Monkey Cami";
+        const count = 48; // Cantidad de frases distribuidas a lo largo del corazón
+        const tiltAngle = 0; // Corazón derecho (0 grados)
+        let offset = 0;
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Escala adaptable al tamaño de la pantalla
+            const minDim = Math.min(canvas.width, canvas.height);
+            const scale = Math.max(7, minDim / 48);
+            const fontSize = Math.max(11, Math.round(scale * 1.1));
+
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = '#ff3399';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Avanzar el desplazamiento a lo largo del contorno del corazón
+            offset -= 0.008;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(tiltAngle);
+
+            for (let i = 0; i < count; i++) {
+                const t = (i / count) * Math.PI * 2 + offset;
+
+                // Ecuación paramétrica del corazón
+                const x = 16 * Math.pow(Math.sin(t), 3) * scale;
+                const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale;
+
+                ctx.fillText(text, x, y);
+            }
+
+            ctx.restore();
+
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = () => {
+            animate();
+            startMusic();
+        };
+    </script>
+</body>
+</html>
